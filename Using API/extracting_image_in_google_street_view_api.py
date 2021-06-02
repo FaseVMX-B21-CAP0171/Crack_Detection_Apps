@@ -52,3 +52,19 @@ img=mpimg.imread('test.jpg')
 imgplot = plt.imshow(img)
 plt.show()
 
+def detect(location):
+  pic_base = 'https://maps.googleapis.com/maps/api/streetview?'
+  pic_params = {
+	  'size': '600x300', # max 640x640 pixels
+	  'location': location,
+	  'key': api_key,
+
+  }
+  pic_response = requests.get(pic_base, params=pic_params)
+  global number = number + 1
+  with open('result' + number + '.jpg', 'wb') as file:
+    file.write(pic_response.content)
+  # remember to close the response connection to the API
+  pic_response.close()
+  img=mpimg.imread('result' + number + '.jpg')
+  return img

@@ -20,7 +20,7 @@ import google_streetview.api
 import requests
 meta_base = 'https://maps.googleapis.com/maps/api/streetview/metadata?'
 pic_base = 'https://maps.googleapis.com/maps/api/streetview?'
-api_key = 'AIzaSyCWFwunn6beI4xsTDfVv77qLWyjmg1_Gw8'
+api_key = 'api_key'
 location = 'Jalan Doktor Wahidin Sudirohusodo, Kembangan, Gresik Regency, East Java, Indonesia'
 meta_params = {'key' : api_key,
                'location' : location}

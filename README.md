@@ -2,6 +2,7 @@
 1. Adding Draft for image classification model 
 2. Adding Draft for Business Proposal
 3. Adding Code for using Google Street View API
+4. Enable API in GCP and Create API Key
 
 
 

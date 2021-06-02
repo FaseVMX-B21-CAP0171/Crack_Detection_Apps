@@ -52,7 +52,7 @@ img=mpimg.imread('test.jpg')
 imgplot = plt.imshow(img)
 plt.show()
 
-def detect(location):
+def detect(location, api_key):
   pic_base = 'https://maps.googleapis.com/maps/api/streetview?'
   pic_params = {
 	  'size': '600x300', # max 640x640 pixels

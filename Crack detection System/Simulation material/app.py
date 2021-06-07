@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-
-#using reference of web implementation of object detection of machine learning from tensorflow
-
-#!/usr/bin/python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Copyright 2017 Google Inc.
@@ -20,16 +16,20 @@
 # limitations under the License.
 
 
+
 import base64
-import cStringIO
+import io
+import os
+import pathlib
 import sys
 import tempfile
 !git clone https://github.com/FaseVMX-B21-CAP0171/Crack_Detection_Apps.git
 MODEL_BASE = '/opt/models/research'
-MODEL_BASE2 = '/content/Crack_Detection_Apps/Crack detection System/Simulation material'
 sys.path.append(MODEL_BASE)
 sys.path.append(MODEL_BASE + '/object_detection')
 sys.path.append(MODEL_BASE + '/slim')
+PATH_TO_LABELS ='/content/Crack_Detection_Apps/Crack detection System/Simulation material/FaseVMX_label_map.pbtxt'
+
 
 from decorator import requires_auth
 from flask import Flask
@@ -47,6 +47,9 @@ from werkzeug.datastructures import CombinedMultiDict
 from wtforms import Form
 from wtforms import ValidationError
 
+# Patch the location of gfile
+tf.gfile = tf.io.gfile
+
 
 app = Flask(__name__)
 
@@ -57,8 +60,6 @@ def before_request():
   pass
 
 
-PATH_TO_CKPT = '/content/Crack_Detection_Apps/Crack detection System/Simulation material/frozen_inference_graph.pb'
-PATH_TO_LABELS ='/content/Crack_Detection_Apps/Crack detection System/Simulation material/FaseVMX_label_map.pbtxt'
 
 content_types = {'jpg': 'image/jpeg',
                  'jpeg': 'image/jpeg',
@@ -85,24 +86,15 @@ class PhotoForm(Form):
 class ObjectDetector(object):
 
   def __init__(self):
-    self.detection_graph = self._build_graph()
-    self.sess = tf.Session(graph=self.detection_graph)
 
     label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
     categories = label_map_util.convert_label_map_to_categories(
         label_map, max_num_classes=90, use_display_name=True)
     self.category_index = label_map_util.create_category_index(categories)
 
-  def _build_graph(self):
-    detection_graph = tf.Graph()
-    with detection_graph.as_default():
-      od_graph_def = tf.GraphDef()
-      with tf.io.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
-        serialized_graph = fid.read()
-        od_graph_def.ParseFromString(serialized_graph)
-        tf.import_graph_def(od_graph_def, name='')
-
-    return detection_graph
+    model = tf.saved_model.load('/content/Crack_Detection_Apps/Crack detection System/Simulation material/frozen_inference_graph.pb')
+    model = model.signatures['serving_default']
+    self.model = model
 
   def _load_image_into_numpy_array(self, image):
     (im_width, im_height) = image.size
@@ -111,23 +103,18 @@ class ObjectDetector(object):
 
   def detect(self, image):
     image_np = self._load_image_into_numpy_array(image)
-    image_np_expanded = np.expand_dims(image_np, axis=0)
+    input_tensor = tf.convert_to_tensor(image_np)
+    input_tensor = input_tensor[tf.newaxis,...]
+    output_dict = self.model(input_tensor)
 
-    graph = self.detection_graph
-    image_tensor = graph.get_tensor_by_name('image_tensor:0')
-    boxes = graph.get_tensor_by_name('detection_boxes:0')
-    scores = graph.get_tensor_by_name('detection_scores:0')
-    classes = graph.get_tensor_by_name('detection_classes:0')
-    num_detections = graph.get_tensor_by_name('num_detections:0')
-
-    (boxes, scores, classes, num_detections) = self.sess.run(
-        [boxes, scores, classes, num_detections],
-        feed_dict={image_tensor: image_np_expanded})
-
-    boxes, scores, classes, num_detections = map(
-        np.squeeze, [boxes, scores, classes, num_detections])
-
-    return boxes, scores, classes.astype(int), num_detections
+    num_detections = int(output_dict.pop('num_detections'))
+    output_dict = {key:value[0, :num_detections].numpy() 
+                   for key,value in output_dict.items()}
+    boxes = output_dict['detection_boxes']
+    classes = output_dict['detection_classes'].astype(np.int64)
+    scores = output_dict['detection_scores']
+   
+    return boxes, scores, classes, num_detections
 
 
 def draw_bounding_box_on_image(image, box, color='red', thickness=4):
@@ -141,10 +128,10 @@ def draw_bounding_box_on_image(image, box, color='red', thickness=4):
 
 
 def encode_image(image):
-  image_buffer = cStringIO.StringIO()
+  image_buffer = io.BytesIO()
   image.save(image_buffer, format='PNG')
   imgstr = 'data:image/png;base64,{:s}'.format(
-      base64.b64encode(image_buffer.getvalue()))
+      base64.b64encode(image_buffer.getvalue()).decode().replace("'", ""))
   return imgstr
 
 
@@ -165,7 +152,7 @@ def detect_objects(image_path):
   result = {}
   result['original'] = encode_image(image.copy())
 
-  for cls, new_image in new_images.iteritems():
+  for cls, new_image in new_images.items():
     category = client.category_index[cls]['name']
     result[category] = encode_image(new_image)
 

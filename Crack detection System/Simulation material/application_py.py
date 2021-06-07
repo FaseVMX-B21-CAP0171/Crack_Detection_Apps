@@ -24,8 +24,9 @@ import base64
 import cStringIO
 import sys
 import tempfile
-
+!git clone https://github.com/FaseVMX-B21-CAP0171/Crack_Detection_Apps.git
 MODEL_BASE = '/opt/models/research'
+MODEL_BASE2 = '/content/Crack_Detection_Apps/Crack detection System/Simulation material'
 sys.path.append(MODEL_BASE)
 sys.path.append(MODEL_BASE + '/object_detection')
 sys.path.append(MODEL_BASE + '/slim')
@@ -56,8 +57,8 @@ def before_request():
   pass
 
 
-PATH_TO_CKPT = 'frozen_inference_graph.pb'
-PATH_TO_LABELS ='FaseVMX_label_map.pbtxt'
+PATH_TO_CKPT = '/content/Crack_Detection_Apps/Crack detection System/Simulation material/frozen_inference_graph.pb'
+PATH_TO_LABELS ='/content/Crack_Detection_Apps/Crack detection System/Simulation material/FaseVMX_label_map.pbtxt'
 
 content_types = {'jpg': 'image/jpeg',
                  'jpeg': 'image/jpeg',

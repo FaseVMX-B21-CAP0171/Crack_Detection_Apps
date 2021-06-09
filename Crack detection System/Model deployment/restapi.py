@@ -29,7 +29,7 @@ def predict():
 
         image_file.save(r'./inference/images/'+image_name)
 
-        img = Image.open(io.BytesIO(image_bytes))
+        # img = Image.open(io.BytesIO(image_bytes))
 
         # results = model(img, size=640)  # reduce size=320 for faster inference
 
